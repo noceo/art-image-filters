@@ -5,7 +5,6 @@ from matplotlib import colors
 from skimage import color
 import argparse
 import cv2
-from pykuwahara import kuwahara
 
 def parse_args():
   cmd = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -115,18 +114,6 @@ if __name__ == '__main__':
 
   ### The main part of the code ###
   print(img.shape)
-  
-
-
-
-  # image = cv2.imread('../images/img_01.jpg')
-
-  # filt1 = kuwahara(image, method='mean', radius=5)
-  # filt2 = kuwahara(image, method='gaussian', radius=17)    # default sigma: computed by OpenCV
-
-  # cv2.imwrite('img_01_mean.jpg', filt1)
-  # cv2.imwrite('img_01_gaus.jpg', filt2)
-
 
   output = kuwahara_basic(img, 11)
   print(output.shape)
