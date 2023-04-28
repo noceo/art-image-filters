@@ -1,4 +1,3 @@
-# Import required libraries
 import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib import colors
@@ -24,13 +23,9 @@ def oil(img, kernel_size, intensity_levels):
   output = np.empty((img.shape))
   radius = kernel_size // 2
   grayscale_img = color.rgb2gray(img)
-  # img = np.pad(img, [(radius,radius),(radius,radius),(0,0)], mode="constant")
-  
-
-
   rgb = np.empty((intensity_levels,3))
-  img = np.pad(img, [(radius,radius),(radius,radius),(0,0)], mode="constant")
-  grayscale_img = np.pad(grayscale_img, [(radius,radius),(radius,radius)], mode="constant")
+  img = np.pad(img, [(radius,radius),(radius,radius),(0,0)], mode="edge")
+  grayscale_img = np.pad(grayscale_img, [(radius,radius),(radius,radius)], mode="edge")
   intensities = np.array([np.rint(pixel*intensity_levels).astype(int)-1 for pixel in grayscale_img])
 
   height, width, _ = img.shape
@@ -45,30 +40,11 @@ def oil(img, kernel_size, intensity_levels):
           intensity = intensity_Q[j,i]
           rgb[intensity] += Q[j,i]
       
-      # print(Q.shape, intensity_Q.shape)
       unique, counts = np.unique(intensity_Q, return_counts=True)
       intensity_count = np.asarray((unique, counts)).T
-      # print(intensity_count)
       max_intensity_index = np.unravel_index(np.argmax(intensity_count), intensity_count.shape)[0]
-
       finalRGB = rgb[intensity_count[max_intensity_index][0]] / intensity_count[max_intensity_index][1]
-      # if finalRGB > 1:
-      #   print(finalRGB)
-      # print(rgb[intensity_count[max_intensity_index][0]])
-      # print(intensity_count[max_intensity_index][1], finalRGB)
       output[y-radius,x-radius] = finalRGB
-
-      # rgb[max_intensity_index] /= intensity_count[]
-      # final = intensity_count[max_intensity_index]
-
-      # print(final)
-      # final = rgb[] 
-      # rgb += Q
-      # rgb[intensities] += np.sum(Q)
-      # bins = np.sort(bins, axis=1)
-      # print(bins)
-
-      # mean_per_bin = 
 
   return output
 
@@ -87,8 +63,7 @@ if __name__ == '__main__':
   ### The main part of the code ###
   print(img.shape)
   
-  output = oil(img, 14, 20)
-  print(output.shape)
+  output = oil(img, 7, 10)
   output = np.clip(output, 0, 1)
   # Writing the result
   if args.outfile:

@@ -5,6 +5,7 @@ from matplotlib import colors
 from skimage import color
 import argparse
 import cv2
+from tqdm import tqdm
 
 def parse_args():
   cmd = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -18,25 +19,6 @@ def read_img(id, path = ""):
   info = np.iinfo(img.dtype) # get information about the image type (min max values)
   img = img.astype(np.float32) / info.max # normalize the image into range 0 and 1
   return img
-
-def calc_quadrant(img, img_hsv, x_center, y_center, x1, x2, y1, y2, n):
-  height, width, _ = img.shape
-  #calc_luminance = lambda color: np.clip(np.dot(color, np.array([0.2127, 0.7152, 0.0722])), 0, 1)
-  # quadrant = np.mgrid[y_center+y1:y_center+y2, x_center+x1:x_center+x2]
-  # print(quadrant)
-  y_start = y_center+y1
-  y_end = y_center+y2
-  x_start = x_center+x1
-  x_end = x_center+x2
-  # print(img[y_start:y_end, x_start:x_end])
-  # print(img[y_start:y_end+1, x_start:x_end+1].shape)
-  # avg = np.mean(img[y_start:y_end+1, x_start:x_end+1], axis=(0,1))
-  # print(avg.shape)
-  # print(img[y_start:y_end+1, x_start:x_end+1].shape)
-  std = np.std(img_hsv[y_start:y_end+1, x_start:x_end+1, 2])
-  # print(img_hsv[y_start:y_end+1, x_start:x_end+1].shape,std)
-  return std
-
 
 def kuwahara_basic(img, kernel_size):
   output = np.empty((img.shape))
@@ -53,51 +35,25 @@ def kuwahara_basic(img, kernel_size):
   quadrants_avg = np.empty((4))
   quadrant_std = np.empty((4))
 
-  i= 0
   height, width, _ = img.shape
-  print(output.shape,radius, quadrant_size, samples_per_quadrant)
-  for y in range(radius, height-radius):
-    for x in range(radius, width-radius):
+  for y in tqdm(range(radius, height-radius)):
+    for x in tqdm(range(radius, width-radius), leave=False):
       # Get the indices that belong to a certain quadrant
-      # quadrants = [img[y-radius:y+1, x-radius:x+1],
-      #             img[y-radius:y+1, x:x+radius+1],
-      #             img[y:y+radius+1, x-radius:x+1],
-      #             img[y:y+radius+1, x:x+radius+1]]
-      
-      # q1 = calc_quadrant(img, img_hsv, x, y, -radius, 0, -radius, 0, samples_per_quadrant)
-      # q2 = calc_quadrant(img, img_hsv, x, y, 0, radius, -radius, 0, samples_per_quadrant)
-      # q3 = calc_quadrant(img, img_hsv, x, y, -radius, 0, 0, radius, samples_per_quadrant)
-      # q4 = calc_quadrant(img, img_hsv, x, y, 0, radius, 0, radius, samples_per_quadrant)
-
       std = [img_hsv[y - radius: y + 1, x: x + radius + 1, 2],
             img_hsv[y - radius: y + 1, x - radius: x + 1, 2],
             img_hsv[y: y + radius + 1, x - radius: x + 1, 2],
             img_hsv[y: y + radius + 1, x: x + radius + 1, 2]]
       
       std = np.std(std, axis=(1,2))
-      # print(std.shape)
       Q =[img[y - radius: y + 1, x: x + radius + 1],
           img[y - radius: y + 1, x - radius: x + 1],
           img[y: y + radius + 1, x - radius: x + 1],
           img[y: y + radius + 1, x: x + radius + 1]]
 
-      # q1 = (0,0)
-      # q2 = (0,0)
-      # q3 = (0,0)
-      # q4 = (0,0)
       min_std_index = np.argmin(std)
-      # similar_std = [x for x in std if x-std[min_std_index] <= t]
-
-      # print(quadrant_std)
-      # print(min_std_index)
-
       avg = np.mean(Q[min_std_index], axis=(0,1))
-      # print(avg)
       output[y-radius,x-radius] = avg
-      # print(i)
-      # print(y-radius,x-radius)
-      i+=1
-  print(output.shape)
+  
   return output
 
 if __name__ == '__main__':
@@ -113,10 +69,8 @@ if __name__ == '__main__':
   img = read_img(str(index).zfill(2), inputDir)
 
   ### The main part of the code ###
-  print(img.shape)
 
-  output = kuwahara_basic(img, 11)
-  print(output.shape)
+  output = kuwahara_basic(img, 5)
   output = np.clip(output, 0, 1)
   # Writing the result
   if args.outfile:
